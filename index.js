@@ -1,67 +1,48 @@
-const puppeteer = require('puppeteer');
 const { PendingXHR } = require('pending-xhr-puppeteer');
-const point = require('./scores');
+const { clearInterval } = require('timers');
+const readline = require('readline');
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require("path");
-const { clearInterval } = require('timers');
+const puppeteer = require('puppeteer');
+const point = require('./scores');
+const robot = require('robotjs');
 
-/* const readline = require('readline');
-const startTime = new Date().getUTCMilliseconds();
-let finishTime;
+let id;
+let isTop;
 
 function commandLine() {
     var rl = readline.createInterface(process.stdin, process.stdout);
-    rl.setPrompt('Enter desired time to fetch data> ');
+    rl.setPrompt('Enter match ID and check top> ');
     rl.prompt();
     rl.on('line', function (line) {
-        let timeParts = line.split(" ");
-        let multiplier = timeParts[0];
-        switch (timeParts[1]) {
-            case "M": {
-                finishTime = startTime + (multiplier * 60000);
-                break;
-            }
-            case "H": {
-                finishTime = startTime + (multiplier * 3600000);
-                break;
-            }
-            default: {
-                rl.setPrompt("Error setting time units.");
-                rl.prompt();
-            }
-        }
-        rl.close();
+        let input = line.split(" ");
+        id = input[0];
+        isTop = input[1].toLowerCase() === 'true' ? true : false;
+        rl.close(id, isTop);
         rl.prompt();
-    }).on('close', function () {
-        start();
-        process.exit(0);
+    }).on('close', async function () {
+        await start();
+        //process.exit(0);
     });
-} */
-//TODO
-// input link, input top or bottom, color difference finder algorithm
-
-function delay(ms) {
-    return new Promise(r => setTimeout(r, ms));
 }
 
 async function start() {
-    console.log("start");
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({headless: false});
+    console.log(id)
+    console.log(isTop)
     if (!fs.existsSync('screenshots')) {
         fs.mkdirSync('screenshots');
     }
     const page = await browser.newPage();
     const pendingXHR = new PendingXHR(page);
-    await page.goto(`https://sports.williamhill.com/betting/en-gb/tennis/OB_EV25769947/panna-udvardy-vs-timea-babos`);
+    await page.goto(`https://sports.williamhill.com/betting/en-gb/tennis/${id}`);
     // Here all xhr requests are not finished
     await pendingXHR.waitForAllXhrFinished();
-
 
     let previousUuid = undefined;
     let interval = await setInterval(async () => {
         let currentUuid = crypto.randomUUID();
-        await page.screenshot({ path: `screenshots/${currentUuid}.png`, clip: point.bottom }).catch(e => console.error(e))
+        await page.screenshot({ path: `screenshots/${currentUuid}.png`, clip: isTop ? point.top : point.bottom }).catch(e => console.error(e))
         console.log("screenshot taken with " + currentUuid);
 
         if (previousUuid && !compareImages(`screenshots/${previousUuid}.png`, `screenshots/${currentUuid}.png`)) {
@@ -104,4 +85,4 @@ function getByteArray(filePath) {
     return result;
 }
 
-start();
+commandLine();
