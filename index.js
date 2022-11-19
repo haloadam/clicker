@@ -27,7 +27,7 @@ function commandLine() {
 }
 
 async function start() {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({headless: true});
     console.log(id)
     console.log(isTop)
     if (!fs.existsSync('screenshots')) {
@@ -47,13 +47,12 @@ async function start() {
 
         if (previousUuid && !compareImages(`screenshots/${previousUuid}.png`, `screenshots/${currentUuid}.png`)) {
             await clearInterval(interval);
-            console.log('clicked')
-            await fs.readdir('screenshots').then((f) => Promise.all(f.map(e => fs.unlink(e))))
+            robot.mouseClick();
+            await fs.rmSync('screenshots', { recursive: true, force: true });
             console.log('cleanup finished')
-
         }
         previousUuid = currentUuid;
-    }, 20);
+    }, 5);
 }
 
 function compareImages(imageOnePath, imageTwoPath) {
